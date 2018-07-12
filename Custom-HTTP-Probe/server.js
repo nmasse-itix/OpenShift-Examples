@@ -86,7 +86,7 @@ router.get("/probe/liveness",function(req,res){
 });
 
 router.get("/probe/custom",function(req,res){
-    if (alive) {
+    if (alive && countdown <= 0) {
         res.type('application/json')
            .status(418)
            .send(JSON.stringify(getState()))
