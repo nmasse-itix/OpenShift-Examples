@@ -1,0 +1,13 @@
+{
+  "name": "sample-app",
+  "version": "0.0.1",
+  "description": "An sample app that can sometimes fail...",
+  "main": "server.js",
+  "scripts": {},
+  "author": "Nicolas MASSE",
+  "repository": "https://github.com/nmasse-itix/OpenShift-Examples.git",
+  "license": "MIT",
+  "dependencies": {
+    "express": "latest"
+  }
+}
