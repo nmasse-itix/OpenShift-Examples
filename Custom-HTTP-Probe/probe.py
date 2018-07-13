@@ -10,11 +10,10 @@ if len (sys.argv) != 2 :
 
 url = sys.argv[1]
 print("Checking " + url + "...")
-
 components = urlparse(url)
 
 connection = httplib.HTTPConnection(components.netloc, timeout = 5)
-connection.request("GET", components.path)
+connection.request("GET", components.path + "?" + components.query)
 response = connection.getresponse()
 
 status = response.status
