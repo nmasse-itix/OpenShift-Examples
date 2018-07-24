@@ -228,6 +228,10 @@ There are also other reasons related to maintenance and ease of use:
   of the container image and the deployment of the new version could be triggered
   automatically.
 
+Lastly, we can also mentioned the short-lived containers (deployment containers,
+init containers, etc.) that are created for a one-time task and destroyed just after.
+A read-only root file system would not change anything in this use case.
+
 ## Conclusion
 
 As a conclusion, it is definitelly possible to use read-only root filesystems in
