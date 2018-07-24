@@ -142,8 +142,8 @@ At this point, if you still want to mount the root filesystem as read-only, you 
 
 - create a dedicated [Security Context Constraint (SCC)](https://docs.openshift.com/container-platform/3.9/admin_guide/manage_scc.html)
 - create a [Service Account](https://docs.openshift.com/container-platform/3.9/dev_guide/service_accounts.html)
-- [affect the SCC to the Service Account](https://blog.openshift.com/understanding-service-accounts-sccs/)
-- [affect this Service Account to your Deployment](https://blog.openshift.com/understanding-service-accounts-sccs/)
+- [assign the SCC to the Service Account](https://blog.openshift.com/understanding-service-accounts-sccs/)
+- [assign this Service Account to your Deployment](https://blog.openshift.com/understanding-service-accounts-sccs/)
 
 Create a SCC named [`readonly-fs`](read-only-scc.yaml) that mounts the root file system as read-only:
 
@@ -157,13 +157,13 @@ Create a service account:
 oc create sa readonly
 ```
 
-Affect the `readonly-fs` SCC to the `readonly` service account:
+Assign the `readonly-fs` SCC to the `readonly` service account:
 
 ```sh
 oc adm policy add-scc-to-user readonly-fs -z readonly
 ```
 
-Affect the `readonly` service account to the `rootfs` deployment:
+Assign the `readonly` service account to the `rootfs` deployment:
 
 ```sh
 oc patch dc/rootfs --patch '{"spec":{"template":{"spec":{"serviceAccountName": "readonly"}}}}'
@@ -211,7 +211,7 @@ oc new-app --name=openshift-tasks jboss-eap70-openshift~https://github.com/nmass
 oc expose service openshift-tasks
 ```
 
-Affect the `readonly` service account **created before** to the `openshift-tasks` deployment:
+Assign the `readonly` service account **created before** to the `openshift-tasks` deployment:
 
 ```sh
 oc patch dc/openshift-tasks --patch '{"spec":{"template":{"spec":{"serviceAccountName": "readonly"}}}}'
@@ -269,7 +269,7 @@ Override the default `deployments` directory of JBoss with a `tmpfs` mountpoint:
 oc volume dc/openshift-tasks --add --overwrite --name jboss-deployments --mount-path /opt/eap/standalone/deployments --type emptyDir
 ```
 
-Add a sidecar container, whose job is to copy the EAR to a writable `tmpfs` mountpoint:
+Add a sidecar container, whose job is to copy the EAR to the new writable `deployments` mountpoint:
 
 ```sh
 oc patch dc/openshift-tasks --type=json -p '[ { "op": "add", "path": "/spec/template/spec/containers/1", "value": { "image": " ", "name": "jboss-deployments", "command": [ "sh", "-c", "mkfifo /opt/eap/standalone/deployments-rw/deploy && while :; do date; echo deploying...; cp -rvL /opt/eap/standalone/deployments/* /opt/eap/standalone/deployments-rw/; sleep 1; read < /opt/eap/standalone/deployments-rw/deploy; done" ], "volumeMounts": [ { "name": "jboss-deployments", "mountPath": "/opt/eap/standalone/deployments-rw/" } ] } } ]'
@@ -346,3 +346,8 @@ with the required cost to implement, maintain and support this configuration.
 
 Also, as you can see in this example, the default OpenShift configuration provides
 other mechanisms to reach the same goals.
+
+There are improvements in the upstream projects to [secure containers using a read-only root file system](https://blog.openshift.com/add-a-layer-of-security-to-openshift-kubernetes-with-cri-o-in-read-only-mode/).
+
+Some applications can leverage such feature, others were not designed for it and cannot leverage it.
+The decision to go for a read-only root file system must be studied and decided on case by case basis.
