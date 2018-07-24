@@ -199,6 +199,100 @@ oc volume dc/rootfs --add --overwrite --name vartmp --mount-path /var/tmp --type
 If you re-run the `touch /tmp/foo` command, it should now succeed while the
 rest of the root file system is still read-only.
 
+## A practical example with a JBoss EAP Application
+
+In this example, we will deploy a very classical JBoss EAP application:
+the "openshift-tasks" whose source code can be found [here](https://github.com/nmasse-itix/openshift-tasks).
+
+First, deploy the application as usual, with the `oc new-app` command:
+
+```sh
+oc new-app --name=openshift-tasks jboss-eap70-openshift~https://github.com/nmasse-itix/openshift-tasks.git
+oc expose service openshift-tasks
+```
+
+Affect the `readonly` service account **created before** to the `openshift-tasks` deployment:
+
+```sh
+oc patch dc/openshift-tasks --patch '{"spec":{"template":{"spec":{"serviceAccountName": "readonly"}}}}'
+```
+
+Override the container entrypoint so that we can work on the configuration
+without crashing the container:
+
+```sh
+oc patch dc/openshift-tasks --type=json -p '[{"op": "add", "path": "/spec/template/spec/containers/0/command", "value": ["/bin/sh", "-c", "while :; do sleep 1; done" ]}]'
+```
+
+Copy the JBoss EAP original configuration and create a Config Map from it:
+
+```sh
+mkdir jboss-config
+oc rsync $(oc get pods -l app=openshift-tasks -o name|tail -n 1):/opt/eap/standalone/configuration/ jboss-config
+oc create configmap jboss-config --from-file=jboss-config
+```
+
+Now, mount this config map somewhere and override the JBoss EAP configuration
+directory with a `tmpfs` mount:
+
+```sh
+oc volume dc/openshift-tasks --add --overwrite --name config-template --mount-path /opt/eap/standalone/configuration.template --type configMap --configmap-name=jboss-config
+oc volume dc/openshift-tasks --add --overwrite --name config --mount-path /opt/eap/standalone/configuration/ --type emptyDir
+```
+
+Add an init container that will copy the original JBoss configuration to the `tmpfs` mount:
+
+```sh
+oc patch dc/openshift-tasks --type=json -p '[ { "op": "add", "path": "/spec/template/spec/initContainers", "value": [] }, { "op": "add", "path": "/spec/template/spec/initContainers/0", "value": { "image": "registry.access.redhat.com/rhel7:7.5", "name": "jboss-config", "command": [ "sh", "-c", "cp -rvL /opt/eap/standalone/configuration.template/* /opt/eap/standalone/configuration/" ], "volumeMounts": [ { "name": "config", "mountPath": "/opt/eap/standalone/configuration/" }, { "name": "config-template", "mountPath": "/opt/eap/standalone/configuration.template" } ] } } ]'
+```
+
+**Note:** the `cp -L` switch is required to dereference symlinks created by the Config Map.
+
+Add `tmpfs` mountpoints where required:
+
+```sh
+oc volume dc/openshift-tasks --add --overwrite --name tmp --mount-path /tmp --type emptyDir
+oc volume dc/openshift-tasks --add --overwrite --name vartmp --mount-path /var/tmp --type emptyDir
+oc volume dc/openshift-tasks --add --overwrite --name jboss-logs --mount-path /opt/eap/standalone/log --type emptyDir
+oc volume dc/openshift-tasks --add --overwrite --name jboss-data --mount-path /opt/eap/standalone/data --type emptyDir
+oc volume dc/openshift-tasks --add --overwrite --name jboss-tmp --mount-path /opt/eap/standalone/tmp --type emptyDir
+oc volume dc/openshift-tasks --add --overwrite --name jolokia-config --mount-path /opt/jolokia/etc/ --type emptyDir
+```
+
+Now, we need to handle the `deployments` directory that contains the EAR to deploy.
+But since JBoss needs to create files in the `deployments` directory, it cannot be
+read-only.
+
+Override the default `deployments` directory of JBoss with a `tmpfs` mountpoint:
+
+```sh
+oc volume dc/openshift-tasks --add --overwrite --name jboss-deployments --mount-path /opt/eap/standalone/deployments --type emptyDir
+```
+
+Add a sidecar container, whose job is to copy the EAR to a writable `tmpfs` mountpoint:
+
+```sh
+oc patch dc/openshift-tasks --type=json -p '[ { "op": "add", "path": "/spec/template/spec/containers/1", "value": { "image": " ", "name": "jboss-deployments", "command": [ "sh", "-c", "mkfifo /opt/eap/standalone/deployments-rw/deploy && while :; do date; echo deploying...; cp -rvL /opt/eap/standalone/deployments/* /opt/eap/standalone/deployments-rw/; sleep 1; read < /opt/eap/standalone/deployments-rw/deploy; done" ], "volumeMounts": [ { "name": "jboss-deployments", "mountPath": "/opt/eap/standalone/deployments-rw/" } ] } } ]'
+```
+
+Add a trigger on image change for this new side-car container:
+
+```sh
+oc set triggers dc/openshift-tasks --from-image=openshift-tasks:latest -c jboss-deployments
+```
+
+Remove the entrypoint override:
+
+```sh
+oc patch dc/openshift-tasks --type=json -p '[{"op": "remove", "path": "/spec/template/spec/containers/0/command" }]'
+```
+
+Watch the container start:
+
+```sh
+oc get pods -w -l app=openshift-tasks
+```
+
 ## Why is the root file-system not mounted read-only by default ?
 
 Even if it can be seen as a good practice to mount the root filesystem as read-only,
@@ -228,9 +322,10 @@ There are also other reasons related to maintenance and ease of use:
   of the container image and the deployment of the new version could be triggered
   automatically.
 
-Lastly, we can also mentioned the short-lived containers (deployment containers,
-init containers, etc.) that are created for a one-time task and destroyed just after.
-A read-only root file system would not change anything in this use case.
+Lastly, we can also mention the short-lived containers (deployment containers,
+init containers, build containers, etc.) that are created for a one-time task
+and destroyed just after. A read-only root file system would not change anything
+in this use case.
 
 ## Conclusion
 
