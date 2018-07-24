@@ -74,15 +74,15 @@ Settings:
     UID:                         <none>
     UID Range Min:               <none>
     UID Range Max:               <none>
-  SELinux Context Strategy:     MustRunAs
-    User:                       <none>
-    Role:                       <none>
-    Type:                       <none>
-    Level:                      <none>
-  FSGroup Strategy:             MustRunAs
-    Ranges:                     <none>
-  Supplemental Groups Strategy: RunAsAny
-    Ranges:                     <none>
+  SELinux Context Strategy:      MustRunAs
+    User:                        <none>
+    Role:                        <none>
+    Type:                        <none>
+    Level:                       <none>
+  FSGroup Strategy:              MustRunAs
+    Ranges:                      <none>
+  Supplemental Groups Strategy:  RunAsAny
+    Ranges:                      <none>
 ```
 
 As you can see, the `Read Only Root Filesystem` option is **NOT enabled** in
