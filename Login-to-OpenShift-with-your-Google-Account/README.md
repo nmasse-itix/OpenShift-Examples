@@ -2,7 +2,7 @@
 
 ## Context
 
-As Solution Architect or Consultants at Red Hat, we often spin up new OpenShift
+As Solution Architect or Consultant at Red Hat, we often spin up new OpenShift
 clusters. By convenience, those clusters are often in the Cloud and are publicly
 facing the Internet.
 
@@ -91,8 +91,10 @@ systemctl restart atomic-openshift-master-controllers
 
 ## Granting rights
 
-- Login on as `cluster-admin` on your OpenShift master (for instance by logging as root on your master)
-- Use `oc adm policy add-cluster-role-to-user` or `oc adm policy add-role-to-user` to grant rights to a user.
+When you want to give additional rights to one of your team mates, just login
+as `cluster-admin` on your OpenShift master (for instance by logging as root
+on your master) and use the `oc adm policy add-cluster-role-to-user` or
+`oc adm policy add-role-to-user` to grant rights to the user.
 
 For instance, to give the `cluster-admin` role to a user named `nmasse@redhat.com`, use the following command:
 
@@ -147,7 +149,7 @@ In the inventory file you used to provision your OpenShift instance, you can
 add:
 
 ```ini
-[OSEv3]
+[OSEv3:vars]
  openshift_master_identity_providers=[ { "name": "RedHat", "challenge": false, "login": true, "mappingMethod": "claim", "provider": { "apiVersion": "v1", "clientID": "<paste the generated client_id here>", "clientSecret": "<paste the generated client_secret here>", "hostedDomain": "redhat.com", "kind": "GoogleIdentityProvider" } } ]
 ```
 
