@@ -150,7 +150,7 @@ add:
 
 ```ini
 [OSEv3:vars]
- openshift_master_identity_providers=[ { "name": "RedHat", "challenge": false, "login": true, "mappingMethod": "claim", "provider": { "apiVersion": "v1", "clientID": "<paste the generated client_id here>", "clientSecret": "<paste the generated client_secret here>", "hostedDomain": "redhat.com", "kind": "GoogleIdentityProvider" } } ]
+openshift_master_identity_providers=[ { "name": "RedHat", "challenge": false, "login": true, "mappingMethod": "claim", "provider": { "apiVersion": "v1", "clientID": "<paste the generated client_id here>", "clientSecret": "<paste the generated client_secret here>", "hostedDomain": "redhat.com", "kind": "GoogleIdentityProvider" } } ]
 ```
 
 **Do not forget to replace the `client_id` and `client_secret` by yours !**
