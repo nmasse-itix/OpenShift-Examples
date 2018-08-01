@@ -35,7 +35,7 @@ scenario, we would like to:
 
 - take the base image provided by Red Hat and add customizations to it
 - take this new base image and create a middleware image that includes Tomcat
-- take this middleware image and install a Tomcat application on it
+- take this middleware image and deploy an application on it
 
 ## Creating the source Image Stream
 
@@ -64,14 +64,15 @@ oc import-image rh-base:7.5 --from=docker.io/centos:7.5.1804 --scheduled --confi
 that can mirror the tags from the remote registry to the image stream, it has
 shortcomings and I would not recommend using it. Namely, it will not import
 all tags but just the first five. This behavior is configurable, see the
-[maxImagesBulkImportedPerRepository](https://docs.openshift.com/container-platform/3.9/install_config/master_node_configuration.html#master-config-image-policy-config)
+[maxImagesBulkImportedPerRepository](https://docs.openshift.com/container-platform/latest/install_config/master_node_configuration.html#master-config-image-policy-config)
 parameter. Unless you really need to import a large number of tags, I would
 suggest importing them explicitely.
 
 ## Creating the target Image Stream
 
-In this example, we will create two target image streams: one for the corporate
-image we will build and one for the application we will build.
+In this example, we will create three target image streams: one for the corporate
+base image we will build, one for our middleware image and one for our
+target application.
 
 Create the `custom-base` image stream:
 
@@ -442,7 +443,7 @@ Update the three buildconfig to reference this GIT repository instead:
 ```sh
 oc patch bc custom-base --type=json -p '[ { "op": "replace", "path": "/spec/source", "value": { "type": "Dockerfile", "git": { "uri": "https://github.com/nmasse-itix/OpenShift-Examples.git", "ref": "master" }, "contextDir": "Docker-Builds/custom-base/" } } ]'
 oc patch bc custom-tomcat --type=json -p '[ { "op": "replace", "path": "/spec/source", "value": { "type": "Dockerfile", "git": { "uri": "https://github.com/nmasse-itix/OpenShift-Examples.git", "ref": "master" }, "contextDir": "Docker-Builds/custom-tomcat/" } } ]'
-oc patch bc custom-tomcat --type=json -p '[ { "op": "replace", "path": "/spec/source", "value": { "type": "Dockerfile", "git": { "uri": "https://github.com/nmasse-itix/OpenShift-Examples.git", "ref": "master" }, "contextDir": "Docker-Builds/target-app/" } } ]'
+oc patch bc target-app --type=json -p '[ { "op": "replace", "path": "/spec/source", "value": { "type": "Dockerfile", "git": { "uri": "https://github.com/nmasse-itix/OpenShift-Examples.git", "ref": "master" }, "contextDir": "Docker-Builds/target-app/" } } ]'
 ```
 
 ## Conclusion
