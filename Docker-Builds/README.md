@@ -429,7 +429,7 @@ _[The `target-app` build finished.]_
 - _Oh ! The `target-app:latest` image changed !_
 - _So, I need to trigger a new deployment of the `target-app`_
 
-And finally, your target app is deployed automatically on the new tomcat image.
+And finally, your target app is deployed automatically based on the new tomcat image.
 
 ## Commit your Dockerfile to a GIT repository
 
