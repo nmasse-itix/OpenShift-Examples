@@ -1,0 +1,31 @@
+---
+
+- name: Regenerates the service serving certificates
+  gather_facts: no
+  hosts: localhost
+  tasks:
+  - name: Get a list of all services
+    command: oc get services --all-namespaces -o json
+    register: oc_get_services
+
+  - block:
+    - name: Delete the secret bound to the service
+      command: oc delete secret {{ item.secret }} -n {{ item.namespace }}
+      with_items: '{{ services }}'
+
+    - name: Touch the service so that the secret gets regenerated
+      command: oc patch service {{ item.service }} -n {{ item.namespace }} --type=json -p '[{"op":"remove","path":"/metadata/annotations/service.alpha.openshift.io~1serving-cert-signed-by"}]'
+      with_items: '{{ services }}'
+
+    - name: Wait for a few seconds, to let OpenShift regenerates all the certificates
+      pause:
+        seconds: 10
+      
+    - name: Delete the pods behind each updated service so that they pick up the new certificate
+      command: oc delete pods -n {{ item.service }} {{ selectors }}
+      vars:
+        selectors: '{% for k,v in item.selectors.items() %}-l {{k}}={{v}} {% endfor %}'
+      with_items: '{{ services }}'
+    vars:
+      data: '{{ oc_get_services.stdout |from_json }}'
+      services: '{{ data|json_query(''items[?metadata.annotations."service.alpha.openshift.io/serving-cert-secret-name"].{ "service": metadata.name, "namespace": metadata.namespace, "secret": metadata.annotations."service.alpha.openshift.io/serving-cert-secret-name", "selectors": spec.selector }'') }}'
