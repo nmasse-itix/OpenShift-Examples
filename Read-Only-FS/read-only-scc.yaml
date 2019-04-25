@@ -15,8 +15,7 @@ allowedFlexVolumes: null
 defaultAddCapabilities: null
 fsGroup:
   type: MustRunAs
-groups:
-- system:authenticated
+groups: []
 priority: null
 readOnlyRootFilesystem: true
 requiredDropCapabilities:
