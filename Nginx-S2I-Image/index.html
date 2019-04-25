@@ -1,0 +1,17 @@
+<html>
+<body>
+<pre id="log">
+</pre>
+<script language="javascript">
+function reqListener () {
+  var log = document.getElementById("log");
+  log.innerText = this.responseText;
+}
+
+var oReq = new XMLHttpRequest();
+oReq.addEventListener("load", reqListener);
+oReq.open("GET", "/response.json");
+oReq.send();
+</script>
+</body>
+</html>
