@@ -232,7 +232,7 @@ You can then copy your images to the OpenShift registry, in the `my-images`
 project:
 
 ```sh
-skopeo copy --dest-creds="skopeo:$TOKEN" oci:./target:rhel7:7.5 docker://$REGISTRY/my-images/rhel7:7.5
+skopeo --insecure-policy copy --dest-creds="skopeo:$TOKEN" oci:./target:rhel7:7.5 docker://$REGISTRY/my-images/rhel7:7.5
 ```
 
 Did you know that even if you can store the images locally, you can also copy
@@ -241,7 +241,7 @@ them "on the fly" without any local storage ?
 Try to copy an image from the Docker Hub directly to the OpenShift registry:
 
 ```sh
-skopeo copy --dest-creds="skopeo:$TOKEN" docker://docker.io/centos:7 docker://$REGISTRY/my-images/centos:7
+skopeo --insecure-policy copy --dest-creds="skopeo:$TOKEN" docker://docker.io/centos:7 docker://$REGISTRY/my-images/centos:7
 ```
 
 ## Pulling an image to the OpenShift registry
@@ -270,7 +270,7 @@ You can then copy your images from the OpenShift registry, located in the
 `other-images` project:
 
 ```sh
-skopeo copy --src-creds="skopeo:$TOKEN" docker://$REGISTRY/other-images/myimage:latest oci:./target:myimage:latest
+skopeo --insecure-policy copy --src-creds="skopeo:$TOKEN" docker://$REGISTRY/other-images/myimage:latest oci:./target:myimage:latest
 ```
 
 ## Persist the registry credentials
