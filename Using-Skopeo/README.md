@@ -52,6 +52,12 @@ Skopeo is available in RHEL, Fedora and CentOS as an RPM package:
 yum install skopeo
 ```
 
+On MacOS, you can install Skopeo using brew:
+
+```sh
+brew install skopeo
+```
+
 ## Copying locally an image from DockerHub
 
 Let's say, we need to make a local copy of the `centos:7`, `centos:7.5.1804`,
